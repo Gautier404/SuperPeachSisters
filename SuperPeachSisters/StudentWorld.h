@@ -14,12 +14,15 @@ class StudentWorld : public GameWorld
 {
 public:
   StudentWorld(std::string assetPath);
+  ~StudentWorld();
   virtual int init();
   virtual int move();
   virtual void cleanUp();
 
 private:
-	std::map <std::string, std::list<Actor*>> actors;
+	//std::map <std::string, std::list<Actor*>> m_actors;
+	std::list<Actor*> m_actors;
+	void createActor(Level::GridEntry, int col, int row);
 };
 
 #endif // STUDENTWORLD_H_

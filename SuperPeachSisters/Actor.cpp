@@ -52,7 +52,7 @@ void Peach::doSomething() {
 };
 
 //-------------Block----------------//
-Block::Block(int startX, int startY, string goodie):
+Block::Block(int startX, int startY, Goodie goodie):
 	Actor(IID_BLOCK, startX, startY, 0, 2) {
 	m_goodie = goodie;
 	m_beenBonked = false;

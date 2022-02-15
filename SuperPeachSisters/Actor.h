@@ -35,10 +35,14 @@ private:
 
 class Block :public Actor {
 public:
-	Block(int startX, int startY, std::string goodie);
+	enum Goodie {
+		none, star, jump, shoot
+	};
+	Block(int startX, int startY, Goodie goodie);
 	virtual void doSomething();
+	
 private:
-	std::string m_goodie;
+	Goodie m_goodie;
 	//either none, star, jump, or shoot
 	bool m_beenBonked;
 };
