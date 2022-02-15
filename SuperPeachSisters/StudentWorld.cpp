@@ -8,6 +8,17 @@ GameWorld* createStudentWorld(string assetPath)
 	return new StudentWorld(assetPath);
 }
 
+//--------------Game World Functions-------------//
+//int getLevel() const;
+//int getLives() const;
+//void decLives();
+//void incLives();
+//int getScore() const;
+//void increaseScore(int howMuch);
+//void setGameStatText(string text);
+//bool getKey(int& value);
+//void playSound(int soundID);
+
 // Students:  Add code to this file, StudentWorld.h, Actor.h, and Actor.cpp
 
 StudentWorld::StudentWorld(string assetPath)
@@ -17,6 +28,7 @@ StudentWorld::StudentWorld(string assetPath)
 
 int StudentWorld::init()
 {
+
     return GWSTATUS_CONTINUE_GAME;
 }
 

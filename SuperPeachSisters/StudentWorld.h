@@ -5,7 +5,7 @@
 #include "Level.h"
 #include <string>
 #include <map>
-#include <vector>
+#include <list>
 
 // Students:  Add code to this file, StudentWorld.cpp, Actor.h, and Actor.cpp
 class Actor;
@@ -19,7 +19,7 @@ public:
   virtual void cleanUp();
 
 private:
-	std::map <std::string, std::vector<Actor*>> actors;
+	std::map <std::string, std::list<Actor*>> actors;
 };
 
 #endif // STUDENTWORLD_H_
