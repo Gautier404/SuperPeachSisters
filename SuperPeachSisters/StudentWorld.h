@@ -13,16 +13,21 @@ class Actor;
 class StudentWorld : public GameWorld
 {
 public:
-  StudentWorld(std::string assetPath);
-  ~StudentWorld();
+	StudentWorld(std::string assetPath);
   virtual int init();
   virtual int move();
   virtual void cleanUp();
+
+  //Helpers for actor logic
+  bool collisionWithBlock(Actor* curActor, int dx = 0, int dy = 0);//dx & dy are in pixels
 
 private:
 	//std::map <std::string, std::list<Actor*>> m_actors;
 	std::list<Actor*> m_actors;
 	void createActor(Level::GridEntry, int col, int row);
+	
+	bool overlap(Actor* curActor, Actor* targetActor, int dx = 0, int dy = 0); //determins if two actors will collide
+
 };
 
 #endif // STUDENTWORLD_H_
