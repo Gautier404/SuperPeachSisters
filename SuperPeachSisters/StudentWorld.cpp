@@ -58,6 +58,7 @@ int StudentWorld::move()
     list<Actor*>::iterator it = m_actors.begin();
     while (it != m_actors.end()) {
         (*it)->doSomething();
+        it++;
     }
     return GWSTATUS_CONTINUE_GAME;
     //decLives();
@@ -106,6 +107,7 @@ bool StudentWorld::collisionWithBlock(Actor* curActor, int dx, int dy)
         if (!(*it)->canMoveThrough() && overlap(curActor, (*it), dx, dy)) {
             return true;
         }
+        it++;
     }
     return false;
 }
