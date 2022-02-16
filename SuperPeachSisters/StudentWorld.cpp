@@ -2,6 +2,8 @@
 #include "GameConstants.h"
 #include "Actor.h"
 #include <string>
+#include <iostream> // defines the overloads of the << operator
+#include <sstream>  // defines the type std::ostringstream
 using namespace std;
 
 GameWorld* createStudentWorld(string assetPath)
@@ -27,10 +29,20 @@ StudentWorld::StudentWorld(string assetPath)
 {
 }
 
+StudentWorld::~StudentWorld() {
+    cleanUp();
+}
+
 int StudentWorld::init()
 {
     Level lev(assetPath());
-    string level_file = "level01.txt";
+
+    ostringstream oss;
+    if(getLevel() < 10) oss << "level0" << getLevel() << ".txt"; //for when only one digit
+    else oss << "level" << getLevel() << ".txt";                    //for two digit levels
+    
+    string level_file = oss.str();
+    //string level_file = "level01.txt";
     Level::LoadResult result = lev.loadLevel(level_file);
     if (result == Level::load_fail_file_not_found)
         cerr << "Could not find level01.txt data file" << endl;
@@ -67,6 +79,11 @@ int StudentWorld::move()
 
 void StudentWorld::cleanUp()
 {
+    list<Actor*>::iterator it = m_actors.begin();
+    while (it != m_actors.end()) {
+        delete (*it);
+        it++;
+    }
 }
 
 

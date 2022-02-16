@@ -14,9 +14,10 @@ class StudentWorld : public GameWorld
 {
 public:
 	StudentWorld(std::string assetPath);
-  virtual int init();
-  virtual int move();
-  virtual void cleanUp();
+	~StudentWorld();
+	virtual int init();
+	virtual int move();
+	virtual void cleanUp();
 
   //Helpers for actor logic
   bool collisionWithBlock(Actor* curActor, int dx = 0, int dy = 0);//dx & dy are in pixels

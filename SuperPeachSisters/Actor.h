@@ -33,12 +33,12 @@ public:
 	virtual void bonk();
 private:
 	bool isInvincible;
-	struct Powers {
+	struct GoodieBag { //helpful struct to hold what powers peach can have
 		bool jump;
 		bool shoot;
 		bool star;
 	};
-	Powers m_powers;
+	GoodieBag goodieBag;
 
 	//Helper movement functions
 	void moveLeft();

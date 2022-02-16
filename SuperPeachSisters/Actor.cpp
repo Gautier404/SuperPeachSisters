@@ -54,9 +54,9 @@ StudentWorld* Actor::getWorld() const {
 Peach::Peach(StudentWorld* world, int startX, int startY):
 	Actor(world, IID_PEACH, startX, startY, 0, 0, 1) {
 	isInvincible = false;
-	m_powers.jump = false;
-	m_powers.star = false;
-	m_powers.shoot = false;
+	goodieBag.jump = false;
+	goodieBag.star = false;
+	goodieBag.shoot = false;
 };
 
 void Peach::doSomething() {
@@ -79,6 +79,9 @@ void Peach::doSomething() {
 		{
 		case KEY_PRESS_LEFT:
 			moveLeft();
+			break;
+		case KEY_PRESS_RIGHT:
+			moveRight();
 			break;
 		}
 	}
@@ -104,7 +107,12 @@ void Peach::moveLeft() {
 }
 
 void Peach::moveRight() {
-
+	setDirection(0);
+	if (getWorld()->collisionWithBlock(this, +4)) {
+		//TODO bonk that object
+		return;
+	}
+	moveTo(getX() + 4, getY());
 }
 
 //-------------Block----------------//
