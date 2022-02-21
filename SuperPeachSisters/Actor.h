@@ -31,8 +31,19 @@ public:
 	Peach(StudentWorld* world, int startX, int startY);
 	virtual void doSomething();
 	virtual void bonk();
+	bool isInvincible(); //returns if peach is currently invincible
 private:
-	bool isInvincible;
+	int hitpoints;
+
+	//counters and statuses
+	int ticksOfInvincibility;
+	bool invincible;
+	int ticksOfTempInvincibility;
+	bool tempInvincible;
+	int ticksOfrecharge;
+	bool recharge;
+	int jumpDistToGo;
+
 	struct GoodieBag { //helpful struct to hold what powers peach can have
 		bool jump;
 		bool shoot;
@@ -43,6 +54,9 @@ private:
 	//Helper movement functions
 	void moveLeft();
 	void moveRight();
+	void continueJump();
+	void initJump();
+	void fall();
 };
 
 class Block :public Actor {
