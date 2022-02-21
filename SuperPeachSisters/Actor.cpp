@@ -53,23 +53,45 @@ StudentWorld* Actor::getWorld() const {
 //-------------Peach----------------//
 Peach::Peach(StudentWorld* world, int startX, int startY):
 	Actor(world, IID_PEACH, startX, startY, 0, 0, 1) {
-	isInvincible = false;
+	ticksOfInvincibility = 0;
+	ticksOfTempInvincibility = 0;
+	invincible = false;
+	tempInvincible = false;
+	jumpDistToGo = 0;
 	goodieBag.jump = false;
 	goodieBag.star = false;
 	goodieBag.shoot = false;
+	hitpoints = 1;
 };
 
 void Peach::doSomething() {
 	//1. Check to see if she is alive
 	//	if not then return immediatly
+	if (!ifAlive()) return;
 	//2. Check if she is currently invincible
 	//	if so decrement ticks before she loses
 	//	invincibility and change status
-	//3. Check to see if she's currently Invincible
+	if (invincible) {
+		ticksOfInvincibility--;
+		if (ticksOfInvincibility <= 0) invincible = false;
+	}
+	//3. Check to see if she's currently temp Invincible
+	if (tempInvincible) {
+		ticksOfTempInvincibility--;
+		if (ticksOfTempInvincibility <= 0) tempInvincible = false;
+}
 	//4. Check if she is in recharge mode
-	//5. Check to see if she overlaps with another object
+	if (recharge) {
+		ticksOfrecharge--;
+		if (ticksOfrecharge <= 0) recharge = false;
+	}
+	//5. Check to see if she overlaps with another object and bonk
+	//TODO
+
 	//6. Do jump stuff
-	//7. Do falling stuff
+	if (jumpDistToGo > 0) continueJump();
+	//7. Do falling stuff if not jumping
+	else fall();
 	//8. Keystroke stuff
 	int ch;
 	if (getWorld()->getKey(ch))
@@ -82,6 +104,9 @@ void Peach::doSomething() {
 			break;
 		case KEY_PRESS_RIGHT:
 			moveRight();
+			break;
+		case KEY_PRESS_UP:
+			initJump();
 			break;
 		}
 	}
@@ -106,6 +131,7 @@ void Peach::moveLeft() {
 	moveTo(getX() - 4, getY());
 }
 
+//bonk object on peaches right or move to the right
 void Peach::moveRight() {
 	setDirection(0);
 	if (getWorld()->collisionWithBlock(this, +4)) {
@@ -115,6 +141,37 @@ void Peach::moveRight() {
 	moveTo(getX() + 4, getY());
 }
 
+//if peach has something solid below her set her jump distance
+//based on her mushroom power up
+void Peach::initJump() {
+	if (!getWorld()->collisionWithBlock(this, 0, -1))return;
+	if (goodieBag.jump) jumpDistToGo = 12;
+	else jumpDistToGo = 8;
+	getWorld()->playSound(SOUND_PLAYER_JUMP);
+}
+
+//if peach is currently jumping bonk actor above her or move her up
+void Peach::continueJump() {
+	if (jumpDistToGo <= 0) return;
+	if (getWorld()->collisionWithBlock(this, 0, +4)) {
+		//TODO bonk object above peach
+		jumpDistToGo = 0;
+		return;
+	}
+	moveTo(getX(), getY() + 4);
+	jumpDistToGo--;
+}
+
+//check if an object (0, 3] pixels below her
+//if no object translate her y by -4 pixels
+void Peach::fall() {
+	if (getWorld()->collisionWithBlock(this, 0, -3))return; //TODO does this actually prevent falling
+	moveTo(getX(), getY() - 4);
+}
+//returns if peach is invincible
+bool Peach::isInvincible() {
+	return invincible || tempInvincible;
+}
 //-------------Block----------------//
 Block::Block(StudentWorld* world, int startX, int startY, Goodie goodie):
 	Actor(world, IID_BLOCK, startX, startY, 0, 2, 1) {
