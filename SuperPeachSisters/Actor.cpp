@@ -4,8 +4,6 @@
 using namespace std;
 // Students:  Add code to this file, Actor.h, StudentWorld.h, and StudentWorld.cpp
 
-
-
 //------------Graph Object Helpful Member Functions-------------//
 //double getX() const; // in pixels (0-255)
 //double getY() const; // in pixels (0-255)
@@ -54,16 +52,20 @@ StudentWorld* Actor::getWorld() const {
 	return m_world;
 }
 
+void Actor::itemFall() {
+	if (getWorld()->collisionWithBlock(this, 0, -2))return; //TODO does this actually prevent falling
+	moveTo(getX(), getY() - 2);
+}
+
 //-------------Peach----------------//
 Peach::Peach(StudentWorld* world, int startX, int startY):
 	Actor(world, IID_PEACH, startX, startY, 0, 0, 1) {
-	ticksOfInvincibility = 0;
 	ticksOfTempInvincibility = 0;
-	invincible = false;
 	tempInvincible = false;
 	jumpDistToGo = 0;
 	goodieBag.jump = false;
 	goodieBag.star = false;
+	goodieBag.ticksOfStar = 0;
 	goodieBag.shoot = false;
 	hitpoints = 1;
 };
@@ -75,9 +77,9 @@ void Peach::doSomething() {
 	//2. Check if she is currently invincible
 	//	if so decrement ticks before she loses
 	//	invincibility and change status
-	if (invincible) {
-		ticksOfInvincibility--;
-		if (ticksOfInvincibility <= 0) invincible = false;
+	if (goodieBag.star) {
+		goodieBag.ticksOfStar--;
+		if (goodieBag.ticksOfStar <= 0) goodieBag.star = false;
 	}
 	//3. Check to see if she's currently temp Invincible
 	if (tempInvincible) {
@@ -128,6 +130,7 @@ bool Peach::damagable() const{
 }
 
 bool Peach::hasStar() const{
+
 	return goodieBag.star;
 }
 
@@ -149,6 +152,7 @@ void Peach::giveShoot() {
 
 void Peach::giveStar() {
 	goodieBag.star = true;
+	goodieBag.ticksOfStar = 150;
 }
 
 void Peach::setHitPoint(int hp) {
@@ -206,17 +210,17 @@ void Peach::fall() {
 }
 //returns if peach is invincible
 bool Peach::isInvincible() {
-	return invincible || tempInvincible;
+	return goodieBag.star || tempInvincible;
 }
 //-------------Block----------------//
-Block::Block(StudentWorld* world, int startX, int startY, string goodie):
-	Actor(world, IID_BLOCK, startX, startY, 0, 2, 1) {
+Block::Block(StudentWorld* world, const int imageID, int startX, int startY, string goodie):
+	Actor(world, imageID, startX, startY, 0, 2, 1) {
 	m_goodie = goodie;
 	m_beenBonked = false;
 }
 
 void Block::doSomething() {
-	return; //dummy
+	return; //block doesn't do anything
 }
 
 bool Block::canMoveThrough() {
@@ -233,6 +237,13 @@ void Block::bonk() {
 	}
 }
 
+//------------Pipe-----------------//
+Pipe::Pipe(StudentWorld* world, int startX, int startY) :
+	Block(world, IID_PIPE, startX, startY, NONE) {};
+
+void Pipe::bonk() {
+	return;//do nothing if bonked
+}
 
 
 //-----------Goodie----------------//
@@ -242,10 +253,16 @@ Goodie::Goodie(StudentWorld* world, int imageID, int startX, int startY):
 void Goodie::doSomething() {
 	//check if overlap with peach 
 	//if overlap with peach power her up
-	if (getWorld()->overlapWithPeach(this)) powerPeachUp();
-	
+	if (getWorld()->overlapWithPeach(this)) {
+		powerPeachUp();
+		//set peach hitpoint to 2
+		getWorld()->getPeach()->setHitPoint(2);
+		kill();
+		getWorld()->playSound(SOUND_PLAYER_POWERUP);
+		return;
+	}
 	//fall if goodie can
-	fall();
+	itemFall();
 	//patrol across game
 	patrol();
 	return;
@@ -266,11 +283,6 @@ void Goodie::patrol() {
 	}
 }
 
-void Goodie::fall() {
-	if (getWorld()->collisionWithBlock(this, 0, -2))return; //TODO does this actually prevent falling
-	moveTo(getX(), getY() - 2);
-}
-
 void Goodie::bonk() {
 	return;//TODO do I really need this? Maybe reconsider making bonk pure virtual for actor
 }
@@ -279,12 +291,33 @@ Mushroom::Mushroom(StudentWorld* world, int startX, int startY) :
 	Goodie(world, IID_MUSHROOM, startX, startY) {};
 
 void Mushroom::powerPeachUp() {
+	//increase score
 	getWorld()->increaseScore(75);
 	//inform peach she has jump
-	getWorld()->getPeach()->giveJump(); //this and the score are the only thing that change so maybe further simplify
-	//add peach hitpoint
-	getWorld()->getPeach()->setHitPoint(2);
-	kill();
-	getWorld()->playSound(SOUND_PLAYER_POWERUP);
+	getWorld()->getPeach()->giveJump(); 
+	
 	return;
+}
+
+//----------Star-------------------//
+Star::Star(StudentWorld* world, int startX, int startY) :
+	Goodie(world, IID_STAR, startX, startY) {};
+
+void Star::powerPeachUp() {
+	//increase score
+	getWorld()->increaseScore(100);
+	//inform peach she has star
+	getWorld()->getPeach()->giveStar();
+}
+
+
+//---------Flower----------------//
+Flower::Flower(StudentWorld* world, int startX, int startY) :
+	Goodie(world, IID_FLOWER, startX, startY) {};
+
+void Flower::powerPeachUp() {
+	//increase score
+	getWorld()->increaseScore(50);
+	//inform peach she has star
+	getWorld()->getPeach()->giveShoot();
 }

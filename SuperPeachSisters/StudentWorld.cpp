@@ -127,18 +127,32 @@ void StudentWorld::createActor(Level::GridEntry ge, int col, int row) {
         break;
     }
         
-    case Level::block:
-    case Level::flower_goodie_block:
+    case Level::block: {
+        Actor* newBlock = new Block(this, IID_BLOCK, x, y, NONE);
+        m_actors.push_back(newBlock);
+        break;
+    }
+    case Level::flower_goodie_block: {
+        Actor* newBlock = new Block(this, IID_BLOCK, x, y, FLOWER);
+        m_actors.push_back(newBlock);
+        break;
+    }
     case Level::star_goodie_block: {
-        Actor* newBlock = new Block(this,x, y, "none");
+        Actor* newBlock = new Block(this, IID_BLOCK, x, y, STAR);
         m_actors.push_back(newBlock);
         break;
     }
-    case Level::mushroom_goodie_block:
-        Actor* newBlock = new Block(this, x, y, "mushroom");
+    case Level::mushroom_goodie_block: {
+        Actor* newBlock = new Block(this, IID_BLOCK, x, y, MUSHROOM);
         m_actors.push_back(newBlock);
         break;
     }
+    case Level::pipe: {
+        Actor* newPipe = new Pipe(this, x, y);
+        m_actors.push_back(newPipe);
+    }
+    }
+    
 }
 
 Actor* StudentWorld::blockingBlock(Actor* curActor, int dx, int dy) 
@@ -203,8 +217,8 @@ Peach* StudentWorld::getPeach() {
 //-----------Actor adders------------//
 void StudentWorld::addGoodie(string type, int x, int y) {
     Actor* newGoodie = nullptr;
-    if (type == "mushroom"){
-    newGoodie = new Mushroom(this, x, y + 8);
-    }
+    if (type == MUSHROOM) newGoodie = new Mushroom(this, x, y + 8);
+    else if (type == STAR) newGoodie = new Star(this, x, y + 8);
+    else if (type == FLOWER) newGoodie = new Flower(this, x, y + 8);
     m_actors.push_back(newGoodie);
 };

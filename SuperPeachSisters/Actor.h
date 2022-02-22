@@ -4,6 +4,11 @@
 #include "GraphObject.h"
 #include <string>
 
+const std::string MUSHROOM = "jump";
+const std::string STAR = "star";
+const std::string FLOWER = "shoot";
+const std::string NONE = "none";
+
 class StudentWorld;
 // Students:  Add code to this file, Actor.cpp, StudentWorld.h, and StudentWorld.cpp
 class Actor :public GraphObject {
@@ -22,6 +27,7 @@ public:
 	void kill(); // sets isAlive to false
 	virtual bool canMoveThrough(); //returns if able to move through actor
 	StudentWorld* getWorld() const;
+	void itemFall(); //translates actor down 2 px if possible;
 private:
 	bool isAlive;
 	StudentWorld* m_world;
@@ -50,8 +56,6 @@ private:
 	int hitpoints;
 
 	//counters and statuses
-	int ticksOfInvincibility;
-	bool invincible;
 	int ticksOfTempInvincibility;
 	bool tempInvincible;
 	int ticksOfrecharge;
@@ -62,6 +66,7 @@ private:
 		bool jump;
 		bool shoot;
 		bool star;
+		int ticksOfStar;
 	};
 	GoodieBag goodieBag;
 
@@ -75,7 +80,7 @@ private:
 
 class Block :public Actor {
 public:
-	Block(StudentWorld* world, int startX, int startY, std::string goodie);
+	Block(StudentWorld* world, const int imageID, int startX, int startY, std::string goodie);
 	virtual void doSomething();
 	virtual void bonk();
 	virtual bool canMoveThrough();
@@ -86,6 +91,18 @@ private:
 	bool m_beenBonked;
 };
 
+class Pipe :public Block {
+public:
+	Pipe(StudentWorld* world, int startX, int startY);
+	virtual void bonk();
+};
+//class Projectile : public Actor {
+//public:
+//	Projectile(StudentWorld* world, int imageID, int startX, int startY, int direction);
+//	virtual void doSomething();
+//
+//};
+
 class Goodie : public Actor {
 public:
 	Goodie(StudentWorld* world, int imageID, int startX, int startY);
@@ -95,7 +112,6 @@ public:
 
 private:
 	void patrol();
-	void fall();
 };
 
 class Mushroom : public Goodie {
@@ -104,11 +120,21 @@ public:
 	virtual void powerPeachUp();
 };
 
+class Star : public Goodie {
+public:
+	Star(StudentWorld* world, int startX, int startY);
+	virtual void powerPeachUp();
+};
+
+class Flower : public Goodie {
+public:
+	Flower(StudentWorld* world, int startX, int startY);
+	virtual void powerPeachUp();
+};
+
 class Enemy : public Actor {
 
 };
 
-class Projectile : public Actor {
 
-};
 #endif // ACTOR_H_
