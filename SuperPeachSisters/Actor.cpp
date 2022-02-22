@@ -46,6 +46,10 @@ bool Actor::canMoveThrough() {
 	return true;
 }
 
+bool Actor::damagable() const{
+	return false;
+}
+
 StudentWorld* Actor::getWorld() const {
 	return m_world;
 }
@@ -119,6 +123,37 @@ void Peach::bonk() {
 	return;//dummy
 }
 
+bool Peach::damagable() const{
+	return true;
+}
+
+bool Peach::hasStar() const{
+	return goodieBag.star;
+}
+
+bool Peach::hasJump() const {
+	return goodieBag.jump;
+}
+
+bool Peach::hasShoot() const {
+	return goodieBag.shoot;
+}
+
+void Peach::giveJump() {
+	goodieBag.jump = true;
+}
+
+void Peach::giveShoot() {
+	goodieBag.shoot = true;
+}
+
+void Peach::giveStar() {
+	goodieBag.star = true;
+}
+
+void Peach::setHitPoint(int hp) {
+	hitpoints = hp;
+}
 //Peach Helper movement functions
 
 //bonk object on peaches left or move to the left
@@ -244,5 +279,12 @@ Mushroom::Mushroom(StudentWorld* world, int startX, int startY) :
 	Goodie(world, IID_MUSHROOM, startX, startY) {};
 
 void Mushroom::powerPeachUp() {
+	getWorld()->increaseScore(75);
+	//inform peach she has jump
+	getWorld()->getPeach()->giveJump(); //this and the score are the only thing that change so maybe further simplify
+	//add peach hitpoint
+	getWorld()->getPeach()->setHitPoint(2);
+	kill();
+	getWorld()->playSound(SOUND_PLAYER_POWERUP);
 	return;
 }

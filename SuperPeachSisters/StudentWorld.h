@@ -9,7 +9,7 @@
 
 // Students:  Add code to this file, StudentWorld.cpp, Actor.h, and Actor.cpp
 class Actor;
-class Block;
+class Peach;
 
 class StudentWorld : public GameWorld
 {
@@ -20,6 +20,7 @@ public:
 	virtual int move();
 	virtual void cleanUp();
 
+	Peach* getPeach();
 	
 	//Helpers for actor logic
 	bool collisionWithBlock(Actor* curActor, int dx = 0, int dy = 0);	//determiens if current actor will collid with 
@@ -33,9 +34,15 @@ public:
 private:
 	//std::map <std::string, std::list<Actor*>> m_actors;
 	std::list<Actor*> m_actors;
-	Actor* m_Peach;
+	Peach* m_Peach;
+
+	//helper functions for init
 	void createActor(Level::GridEntry, int col, int row); //given a grid entry create a actor at the correct position
 	
+	//helper functions for move
+	void updateText();
+
+
 	bool overlap(Actor* curActor, Actor* targetActor, int dx = 0, int dy = 0); //determins if two actors will collide
 
 };

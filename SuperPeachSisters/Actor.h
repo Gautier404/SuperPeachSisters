@@ -18,6 +18,7 @@ public:
 	virtual void doSomething() = 0;
 	virtual void bonk() = 0; //removes one hit point
 	bool ifAlive() const; //returns if actor is alive
+	virtual bool damagable() const;
 	void kill(); // sets isAlive to false
 	virtual bool canMoveThrough(); //returns if able to move through actor
 	StudentWorld* getWorld() const;
@@ -31,7 +32,20 @@ public:
 	Peach(StudentWorld* world, int startX, int startY);
 	virtual void doSomething();
 	virtual void bonk();
+	virtual bool damagable() const; //Spec needs this for block so I guess I'll need it for most things?
 	bool isInvincible(); //returns if peach is currently invincible
+
+	//goodie bag getters
+	bool hasStar() const;
+	bool hasJump() const;
+	bool hasShoot() const;
+
+	//goodie bag setters
+	void giveStar();
+	void giveJump();
+	void giveShoot();
+
+	void setHitPoint(int hp);
 private:
 	int hitpoints;
 

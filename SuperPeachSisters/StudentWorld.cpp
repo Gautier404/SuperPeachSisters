@@ -66,14 +66,32 @@ int StudentWorld::init()
 
 int StudentWorld::move()
 {
-    // This code is here merely to allow the game to build, run, and terminate after you hit enter.
-    // Notice that the return value GWSTATUS_PLAYER_DIED will cause our framework to end the current level.
+    //Ask all actors to do something
     list<Actor*>::iterator it = m_actors.begin();
     while (it != m_actors.end()) {
         (*it)->doSomething();
+        //have to add in detection for if peach dies (prolly check if she's alive)
         it++;
     }
+    //if peach has reached a flag play SOUND_FINISHED_LEVEL and return GWSTATUS_FINISHED_LEVEL
+    //if peach has reached mario play  SOUND_GAME_OVER and return GWSTATUS_PLAYER_WON
+
+    //delete any dead actors
+    it = m_actors.begin();
+    while (it != m_actors.end()) {
+        if (!(*it)->ifAlive()) {
+            delete (*it);
+            it = m_actors.erase(it); //should move iterator to next value
+        }
+        else it++;
+    }
+    //update status text
+    updateText();
+
+    //if level isn't over then continue the game
     return GWSTATUS_CONTINUE_GAME;
+
+
     //decLives();
     //return GWSTATUS_PLAYER_DIED;
 }
@@ -102,9 +120,10 @@ void StudentWorld::createActor(Level::GridEntry ge, int col, int row) {
     case Level::empty:
         break;
     case Level::peach: {
-        Actor* newPeach = new Peach(this,x ,y );
-        m_actors.push_front(newPeach);
+        Peach* newPeach = new Peach(this,x ,y );
         m_Peach = newPeach;
+        Actor* peachButActor = newPeach;
+        m_actors.push_front(peachButActor);
         break;
     }
         
@@ -160,11 +179,32 @@ bool StudentWorld::overlap(Actor* curActor, Actor* targetActor, int dx, int dy) 
 
 }
 
+void StudentWorld::updateText() {
+    ostringstream text;
+    
+    text << "Lives: " << getLives() << "  Level: ";
+    text.fill('0');
+    text.width(2);
+    text << getLevel() << "  Points : ";
+    text.width(6);
+    text << getScore() << " ";
+
+    if (m_Peach->hasStar()) text << "StarPower! ";
+    if (m_Peach->hasShoot()) text << "ShootPower! ";
+    if (m_Peach->hasJump()) text << "JumpPower! ";
+    setGameStatText(text.str());
+
+}
+
+Peach* StudentWorld::getPeach() {
+    return m_Peach;
+}
 
 //-----------Actor adders------------//
 void StudentWorld::addGoodie(string type, int x, int y) {
+    Actor* newGoodie = nullptr;
     if (type == "mushroom"){
-        Actor* newGoodie = new Mushroom(this, x, y + 8);
-        m_actors.push_back(newGoodie);
+    newGoodie = new Mushroom(this, x, y + 8);
     }
+    m_actors.push_back(newGoodie);
 };
