@@ -61,18 +61,33 @@ private:
 
 class Block :public Actor {
 public:
-	enum Goodie {
-		none, star, jump, shoot
-	};
-	Block(StudentWorld* world, int startX, int startY, Goodie goodie);
+	Block(StudentWorld* world, int startX, int startY, std::string goodie);
 	virtual void doSomething();
 	virtual void bonk();
 	virtual bool canMoveThrough();
 	
 private:
-	Goodie m_goodie;
+	std::string m_goodie;
 	//either none, star, jump, or shoot
 	bool m_beenBonked;
+};
+
+class Goodie : public Actor {
+public:
+	Goodie(StudentWorld* world, int imageID, int startX, int startY);
+	virtual void doSomething();
+	virtual void powerPeachUp() = 0;
+	virtual void bonk();
+
+private:
+	void patrol();
+	void fall();
+};
+
+class Mushroom : public Goodie {
+public:
+	Mushroom(StudentWorld* world, int startX, int startY);
+	virtual void powerPeachUp();
 };
 
 class Enemy : public Actor {

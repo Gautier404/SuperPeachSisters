@@ -27,6 +27,7 @@ GameWorld* createStudentWorld(string assetPath)
 StudentWorld::StudentWorld(string assetPath)
 : GameWorld(assetPath)
 {
+    m_Peach = nullptr;
 }
 
 StudentWorld::~StudentWorld() {
@@ -94,39 +95,53 @@ void StudentWorld::createActor(Level::GridEntry ge, int col, int row) {
     //Options
     //empty, peach, koopa, goomba, piranha, block, star_goodie_block,
     //mushroom_goodie_block, flower_goodie_block, pipe, flag, mario
+    int x = col * SPRITE_WIDTH;
+    int y = row * SPRITE_HEIGHT;
     switch (ge)
     {
     case Level::empty:
         break;
     case Level::peach: {
-        Actor* newPeach = new Peach(this, col, row);
+        Actor* newPeach = new Peach(this,x ,y );
         m_actors.push_front(newPeach);
+        m_Peach = newPeach;
         break;
     }
         
     case Level::block:
-    case Level::mushroom_goodie_block:
     case Level::flower_goodie_block:
     case Level::star_goodie_block: {
-        Actor* newBlock = new Block(this,col, row, Block::none);
+        Actor* newBlock = new Block(this,x, y, "none");
         m_actors.push_back(newBlock);
         break;
     }
-        
+    case Level::mushroom_goodie_block:
+        Actor* newBlock = new Block(this, x, y, "mushroom");
+        m_actors.push_back(newBlock);
+        break;
     }
 }
 
-bool StudentWorld::collisionWithBlock(Actor* curActor, int dx, int dy) 
+Actor* StudentWorld::blockingBlock(Actor* curActor, int dx, int dy) 
 //TODO only implemented for static objects like blocks for now
 {
     list<Actor*>::iterator it = m_actors.begin();
     while (it != m_actors.end()) {
         if (!(*it)->canMoveThrough() && overlap(curActor, (*it), dx, dy)) {
-            return true;
+            return (*it);
         }
         it++;
     }
-    return false;
+    return nullptr;
+}
+
+bool StudentWorld::collisionWithBlock(Actor* curActor, int dx, int dy)
+{
+    return (blockingBlock(curActor, dx, dy) != nullptr);
+}
+
+bool StudentWorld::overlapWithPeach(Actor* curActor) {
+    return overlap(curActor, m_Peach);
 }
 
 bool StudentWorld::overlap(Actor* curActor, Actor* targetActor, int dx, int dy) {
@@ -144,3 +159,12 @@ bool StudentWorld::overlap(Actor* curActor, Actor* targetActor, int dx, int dy) 
     return false; //actors do not overlap
 
 }
+
+
+//-----------Actor adders------------//
+void StudentWorld::addGoodie(string type, int x, int y) {
+    if (type == "mushroom"){
+        Actor* newGoodie = new Mushroom(this, x, y + 8);
+        m_actors.push_back(newGoodie);
+    }
+};

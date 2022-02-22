@@ -25,8 +25,8 @@ Actor::Actor(StudentWorld* world,
 	int depth,
 	double size) :
 	GraphObject(imageID,
-		startX* SPRITE_WIDTH, // column first - x //TODO check to make sure I'm doing this math right
-		startY* SPRITE_HEIGHT, // then row - y
+		startX, // column first - x //TODO check to make sure I'm doing this math right
+		startY, // then row - y
 		startDirection,
 		depth,
 		size) {
@@ -153,8 +153,9 @@ void Peach::initJump() {
 //if peach is currently jumping bonk actor above her or move her up
 void Peach::continueJump() {
 	if (jumpDistToGo <= 0) return;
-	if (getWorld()->collisionWithBlock(this, 0, +4)) {
-		//TODO bonk object above peach
+	Actor* blockToBonk = getWorld()->blockingBlock(this, 0, +4);
+	if (blockToBonk != nullptr) {
+		blockToBonk->bonk();//TODO bonk object above peach
 		jumpDistToGo = 0;
 		return;
 	}
@@ -173,7 +174,7 @@ bool Peach::isInvincible() {
 	return invincible || tempInvincible;
 }
 //-------------Block----------------//
-Block::Block(StudentWorld* world, int startX, int startY, Goodie goodie):
+Block::Block(StudentWorld* world, int startX, int startY, string goodie):
 	Actor(world, IID_BLOCK, startX, startY, 0, 2, 1) {
 	m_goodie = goodie;
 	m_beenBonked = false;
@@ -188,5 +189,60 @@ bool Block::canMoveThrough() {
 }
 
 void Block::bonk() {
-	return;//dummy
+	//if block empty or already gave its goodie play bonk sound
+	if (m_goodie == "none" || m_beenBonked == true) getWorld()->playSound(SOUND_PLAYER_BONK);
+	else {
+		getWorld()->playSound(SOUND_POWERUP_APPEARS);
+		getWorld()->addGoodie(m_goodie, getX(), getY());
+		m_beenBonked = true;
+	}
+}
+
+
+
+//-----------Goodie----------------//
+Goodie::Goodie(StudentWorld* world, int imageID, int startX, int startY):
+	Actor(world, imageID, startX, startY, 0, 1, 1) {}
+
+void Goodie::doSomething() {
+	//check if overlap with peach 
+	//if overlap with peach power her up
+	if (getWorld()->overlapWithPeach(this)) powerPeachUp();
+	
+	//fall if goodie can
+	fall();
+	//patrol across game
+	patrol();
+	return;
+}
+
+void Goodie::patrol() {
+	if (getDirection() == 0) {
+		//if facing right check if goodie can move to the right.
+		//move it if it can or switch its direction
+		if (!getWorld()->collisionWithBlock(this, +2)) moveTo(getX() + 2, getY());
+		else setDirection(180);
+	}
+	else {
+		//if facing left check if goodie can move to the left.
+		//move it if it can or switch its direction.
+		if (!getWorld()->collisionWithBlock(this, -2)) moveTo(getX() - 2, getY());
+		else setDirection(0);
+	}
+}
+
+void Goodie::fall() {
+	if (getWorld()->collisionWithBlock(this, 0, -2))return; //TODO does this actually prevent falling
+	moveTo(getX(), getY() - 2);
+}
+
+void Goodie::bonk() {
+	return;//TODO do I really need this? Maybe reconsider making bonk pure virtual for actor
+}
+//-----------Mushroom--------------//
+Mushroom::Mushroom(StudentWorld* world, int startX, int startY) :
+	Goodie(world, IID_MUSHROOM, startX, startY) {};
+
+void Mushroom::powerPeachUp() {
+	return;
 }
