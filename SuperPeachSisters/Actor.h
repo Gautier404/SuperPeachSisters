@@ -80,7 +80,7 @@ private:
 
 class Block :public Actor {
 public:
-	Block(StudentWorld* world, const int imageID, int startX, int startY, std::string goodie);
+	Block(StudentWorld* world, int startX, int startY, std::string goodie, const int imageID = IID_BLOCK);
 	virtual void doSomething();
 	virtual void bonk();
 	virtual bool canMoveThrough();

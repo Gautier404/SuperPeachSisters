@@ -128,22 +128,22 @@ void StudentWorld::createActor(Level::GridEntry ge, int col, int row) {
     }
         
     case Level::block: {
-        Actor* newBlock = new Block(this, IID_BLOCK, x, y, NONE);
+        Actor* newBlock = new Block(this, x, y, NONE);
         m_actors.push_back(newBlock);
         break;
     }
     case Level::flower_goodie_block: {
-        Actor* newBlock = new Block(this, IID_BLOCK, x, y, FLOWER);
+        Actor* newBlock = new Block(this, x, y, FLOWER);
         m_actors.push_back(newBlock);
         break;
     }
     case Level::star_goodie_block: {
-        Actor* newBlock = new Block(this, IID_BLOCK, x, y, STAR);
+        Actor* newBlock = new Block(this, x, y, STAR);
         m_actors.push_back(newBlock);
         break;
     }
     case Level::mushroom_goodie_block: {
-        Actor* newBlock = new Block(this, IID_BLOCK, x, y, MUSHROOM);
+        Actor* newBlock = new Block(this, x, y, MUSHROOM);
         m_actors.push_back(newBlock);
         break;
     }

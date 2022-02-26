@@ -213,7 +213,7 @@ bool Peach::isInvincible() {
 	return goodieBag.star || tempInvincible;
 }
 //-------------Block----------------//
-Block::Block(StudentWorld* world, const int imageID, int startX, int startY, string goodie):
+Block::Block(StudentWorld* world,  int startX, int startY, string goodie, const int imageID ):
 	Actor(world, imageID, startX, startY, 0, 2, 1) {
 	m_goodie = goodie;
 	m_beenBonked = false;
@@ -239,7 +239,7 @@ void Block::bonk() {
 
 //------------Pipe-----------------//
 Pipe::Pipe(StudentWorld* world, int startX, int startY) :
-	Block(world, IID_PIPE, startX, startY, NONE) {};
+	Block(world, startX, startY, NONE, IID_PIPE) {};
 
 void Pipe::bonk() {
 	return;//do nothing if bonked
