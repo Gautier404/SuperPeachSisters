@@ -36,6 +36,10 @@ bool Actor::ifAlive() const {
 	return isAlive;
 }
 
+bool Actor::isFriendly() const {
+	return true;
+}
+
 void Actor::kill() {
 	isAlive = false;
 }
@@ -46,6 +50,10 @@ bool Actor::canMoveThrough() {
 
 bool Actor::damagable() const{
 	return false;
+}
+
+void Actor::bonk() {
+	return;//by default bonk does nothing
 }
 
 StudentWorld* Actor::getWorld() const {
@@ -62,6 +70,8 @@ Peach::Peach(StudentWorld* world, int startX, int startY):
 	Actor(world, IID_PEACH, startX, startY, 0, 0, 1) {
 	ticksOfTempInvincibility = 0;
 	tempInvincible = false;
+	recharge = false;
+	ticksOfrecharge = 0;
 	jumpDistToGo = 0;
 	goodieBag.jump = false;
 	goodieBag.star = false;
@@ -92,7 +102,7 @@ void Peach::doSomething() {
 		if (ticksOfrecharge <= 0) recharge = false;
 	}
 	//5. Check to see if she overlaps with another object and bonk
-	//TODO
+	getWorld()->bonkOverlapsWithPeach();
 
 	//6. Do jump stuff
 	if (jumpDistToGo > 0) continueJump();
@@ -114,6 +124,9 @@ void Peach::doSomething() {
 		case KEY_PRESS_UP:
 			initJump();
 			break;
+		case KEY_PRESS_SPACE:
+			shoot();
+			break;
 		}
 	}
 	
@@ -123,6 +136,10 @@ void Peach::doSomething() {
 
 void Peach::bonk() {
 	return;//dummy
+}
+
+void Peach::kill() {
+	return;//TODO dummy
 }
 
 bool Peach::damagable() const{
@@ -158,6 +175,12 @@ void Peach::giveStar() {
 void Peach::setHitPoint(int hp) {
 	hitpoints = hp;
 }
+
+//returns if peach is invincible
+bool Peach::isInvincible() {
+	return goodieBag.star || tempInvincible;
+}
+
 //Peach Helper movement functions
 
 //bonk object on peaches left or move to the left
@@ -208,10 +231,20 @@ void Peach::fall() {
 	if (getWorld()->collisionWithBlock(this, 0, -3))return; //TODO does this actually prevent falling
 	moveTo(getX(), getY() - 4);
 }
-//returns if peach is invincible
-bool Peach::isInvincible() {
-	return goodieBag.star || tempInvincible;
+
+void Peach::shoot() {
+	if (!recharge && goodieBag.shoot) {
+		getWorld()->playSound(SOUND_PLAYER_FIRE);
+		ticksOfrecharge = 8;
+		recharge = true;
+		int dx;
+		if (getDirection() == 0) dx = 4;
+		else dx = -4;
+		getWorld()->addProjectile(PEACHFIRE, getX() + dx, getY(), getDirection());
+	}
 }
+
+
 //-------------Block----------------//
 Block::Block(StudentWorld* world,  int startX, int startY, string goodie, const int imageID ):
 	Actor(world, imageID, startX, startY, 0, 2, 1) {
@@ -283,9 +316,6 @@ void Goodie::patrol() {
 	}
 }
 
-void Goodie::bonk() {
-	return;//TODO do I really need this? Maybe reconsider making bonk pure virtual for actor
-}
 //-----------Mushroom--------------//
 Mushroom::Mushroom(StudentWorld* world, int startX, int startY) :
 	Goodie(world, IID_MUSHROOM, startX, startY) {};
@@ -321,3 +351,164 @@ void Flower::powerPeachUp() {
 	//inform peach she has star
 	getWorld()->getPeach()->giveShoot();
 }
+
+
+//---------Projectile-----------//
+Projectile::Projectile(StudentWorld* world, int imageID, int startX, int startY, int direction):
+	Actor(world, imageID, startX, startY,direction, 1, 1) {};
+
+void Projectile::doSomething() {
+	//check to see if it overlaps with peach or an enemy
+	if (hitThing()) {
+		kill();
+		return;
+	}
+
+	//fall if the projectile can fall 
+	itemFall();
+	//projectile patrol (same for all projectiles)
+	if (getDirection() == 0) {
+		//if facing right check if goodie can move to the right.
+		//move it if it can, otherwise set its status to not alive
+		if (!getWorld()->collisionWithBlock(this, +2)) moveTo(getX() + 2, getY());
+		else kill();
+	}
+	else {
+		//if facing left check if goodie can move to the left.
+		//move it if it can, otherwise set its status to not alive
+		if (!getWorld()->collisionWithBlock(this, -2)) moveTo(getX() - 2, getY());
+		else kill();
+	};
+}
+
+bool Projectile::hitThing() {
+	return getWorld()->damageOverlap(this);
+}
+
+//--------Peach Fireball--------//
+PeachFireball::PeachFireball(StudentWorld* world, int startX, int startY, int direction) :
+	Projectile(world, IID_PEACH_FIRE, startX, startY, direction)
+{};
+
+
+Shell::Shell(StudentWorld* world, int startX, int startY, int direction) :
+	Projectile(world, IID_SHELL, startX, startY, direction) 
+{};
+
+PiranhaFireball::PiranhaFireball(StudentWorld* world, int startX, int startY, int direction) :
+	Projectile(world, IID_PIRANHA_FIRE, startX, startY, direction)
+{};
+
+bool PiranhaFireball::hitThing() {
+	if (getWorld()->overlapWithPeach(this)) {
+		getWorld()->getPeach()->kill();
+		return true;
+	}
+	else return false;
+}
+
+//-------Flag------------------//
+Flag::Flag(StudentWorld* world, int startX, int startY, int imageID) :
+	Actor(world, imageID, startX, startY, 0, 1, 1) {};
+
+void Flag::doSomething() {
+	if (!ifAlive()) return;
+	if (getWorld()->overlapWithPeach(this)) {
+		getWorld()->increaseScore(1000);
+		kill();
+		tellWorldAboutWin();
+	}
+}
+
+void Flag::tellWorldAboutWin() {
+	getWorld()->completeLevel();
+}
+
+//------------Mario---------------//
+Mario::Mario(StudentWorld* world, int startX, int startY) :
+	Flag(world, startX, startY, IID_MARIO) {};
+
+void Mario::tellWorldAboutWin() {
+	getWorld()->completeGame();
+}
+
+//--------------Enemy------------//
+Enemy::Enemy(StudentWorld* world, int imageID, int startX, int startY):
+	Actor(world, imageID, startX, startY, 0, 0, 1) {};
+
+bool Enemy::damagable() {
+	return true;
+}
+
+bool Enemy::isFriendly() const {
+	return false;
+}
+
+void Enemy::doSomething() {
+	//if dead return immediatly
+	if (!ifAlive()) return;
+	//attempt to bonk peach
+	if (getWorld()->overlapWithPeach(this)) getWorld()->getPeach()->bonk();
+	//move if koopa or goomba move or attempt to shoot peach & update animation frame if Piranha
+	patrol();
+}
+
+void Enemy::patrol() {
+	//if enemy is blocked in current direction switch its direction
+	if (getDirection() == 0 && getWorld()->collisionWithBlock(this, +1)) setDirection(180);
+	else if (getWorld()->collisionWithBlock(this, -1)) setDirection(0);
+	//if not blocked but it will end up moving over empty space switch its direction
+	else {
+		if (getDirection() == 0 && !getWorld()->isSupported(this, +1)) setDirection(180);
+		else if (!getWorld()->isSupported(this, -1)) setDirection(0);
+	}
+	//if enemy can move in new direction move otherwise immediatly return
+	if (getDirection() == 0) {
+		if (!getWorld()->collisionWithBlock(this, +1)) moveTo(getX() + 1, getY());
+		else return;
+	}
+	else {
+		if (!getWorld()->collisionWithBlock(this, -1)) moveTo(getX() - 1, getY());
+		else return;
+	}
+}
+
+void Enemy::bonk() {
+	if (getWorld()->getPeach()->hasStar()) {
+		getWorld()->playSound(SOUND_PLAYER_KICK);
+		kill();
+	}
+	return;//TODO
+}
+
+void Enemy::kill() {
+	getWorld()->increaseScore(100);
+	Actor::kill();
+	cerr << "kill calle" << endl;
+	return;//TODO
+}
+
+//------------Piranha------------//
+Piranha::Piranha(StudentWorld* world, int startX, int startY) :
+	Enemy(world, IID_PIRANHA, startX, startY) {};
+
+void Piranha::patrol() {
+	return; //TODO implement
+}
+
+//------------Koopa--------------//
+Koopa::Koopa(StudentWorld* world, int startX, int startY) :
+	Enemy(world, IID_KOOPA, startX, startY) {};
+
+void Koopa::kill() {
+	getWorld()->increaseScore(100);
+	Actor::kill();
+	getWorld()->addProjectile(SHELL, getX(), getY(), getDirection());
+	return; //TODO implement shell thing
+}
+
+//------------Goomba-------------//
+Goomba::Goomba(StudentWorld* world, int startX, int startY) :
+	Enemy(world, IID_GOOMBA, startX, startY) {};
+
+

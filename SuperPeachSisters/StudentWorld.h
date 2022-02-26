@@ -22,20 +22,30 @@ public:
 
 	Peach* getPeach();
 	
-	//Helpers for actor logic
-	bool collisionWithBlock(Actor* curActor, int dx = 0, int dy = 0);	//determiens if current actor will collid with 
-																		//a block dx & dy are in pixels
-	Actor* blockingBlock(Actor* curActor, int dx = 0, int dy = 0);		//returns address of blocking block
-	bool overlapWithPeach(Actor* curActor); //return if current actor overlaps with peach
+	//Public Overlapping functions
+	bool collisionWithBlock(Actor* curActor, int dx = 0, int dy = 0) const;	//determiens if current actor will collid with 
+																			//a block dx & dy are in pixels
+	Actor* blockingBlock(Actor* curActor, int dx = 0, int dy = 0) const;		//returns address of blocking block
+	bool overlapWithPeach(Actor* curActor) const; //return if current actor overlaps with peach
+	bool isSupported(Actor* curActor, int dx) const;
+	void bonkOverlapsWithPeach();
+	bool damageOverlap(Actor* curActor);
+
+
+	//level logic setters
+	void completeLevel();
+	void completeGame();
 
 	//Actor adders
 	void addGoodie(std::string type, int x, int y);
-
+	void addProjectile(int type, int x, int y, int direction);
 private:
 	//std::map <std::string, std::list<Actor*>> m_actors;
 	std::list<Actor*> m_actors;
 	Peach* m_Peach;
 
+	bool m_levelCompleted;
+	bool m_gameCompleted;
 	//helper functions for init
 	void createActor(Level::GridEntry, int col, int row); //given a grid entry create a actor at the correct position
 	
@@ -43,7 +53,7 @@ private:
 	void updateText();
 
 
-	bool overlap(Actor* curActor, Actor* targetActor, int dx = 0, int dy = 0); //determins if two actors will collide
+	bool overlap(Actor* curActor, Actor* targetActor, int dx = 0, int dy = 0) const; //determins if two actors will collide
 
 };
 

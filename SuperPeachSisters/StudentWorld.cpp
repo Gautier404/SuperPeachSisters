@@ -28,6 +28,8 @@ StudentWorld::StudentWorld(string assetPath)
 : GameWorld(assetPath)
 {
     m_Peach = nullptr;
+    m_levelCompleted = false;
+    m_gameCompleted = false;
 }
 
 StudentWorld::~StudentWorld() {
@@ -36,6 +38,9 @@ StudentWorld::~StudentWorld() {
 
 int StudentWorld::init()
 {
+    //cerr << "making new level" << endl;
+    m_levelCompleted = false;
+
     Level lev(assetPath());
 
     ostringstream oss;
@@ -60,7 +65,7 @@ int StudentWorld::init()
         }
 
     }
-
+    cerr << "made new level" << endl;
     return GWSTATUS_CONTINUE_GAME;
 }
 
@@ -68,13 +73,23 @@ int StudentWorld::move()
 {
     //Ask all actors to do something
     list<Actor*>::iterator it = m_actors.begin();
+  
     while (it != m_actors.end()) {
         (*it)->doSomething();
         //have to add in detection for if peach dies (prolly check if she's alive)
         it++;
     }
     //if peach has reached a flag play SOUND_FINISHED_LEVEL and return GWSTATUS_FINISHED_LEVEL
+    if (m_levelCompleted) {
+        playSound(SOUND_FINISHED_LEVEL);
+        return GWSTATUS_FINISHED_LEVEL;
+    }
+    
     //if peach has reached mario play  SOUND_GAME_OVER and return GWSTATUS_PLAYER_WON
+    if (m_gameCompleted) {
+        playSound(SOUND_GAME_OVER);
+        return GWSTATUS_PLAYER_WON;
+    }
 
     //delete any dead actors
     it = m_actors.begin();
@@ -101,7 +116,7 @@ void StudentWorld::cleanUp()
     list<Actor*>::iterator it = m_actors.begin();
     while (it != m_actors.end()) {
         delete (*it);
-        it++;
+        it = m_actors.erase(it);
     }
 }
 
@@ -150,15 +165,45 @@ void StudentWorld::createActor(Level::GridEntry ge, int col, int row) {
     case Level::pipe: {
         Actor* newPipe = new Pipe(this, x, y);
         m_actors.push_back(newPipe);
+        break;
+    }
+    case Level::flag: {
+        Actor* newFlag = new Flag(this, x, y);
+        m_actors.push_back(newFlag);
+        break;
+    }
+    case Level::mario : {
+        Actor* newMario = new Mario(this, x, y);
+        m_actors.push_back(newMario);
+        break;
+    }
+    case Level::goomba: {
+        Actor* newGoomba = new Goomba(this, x, y);
+        m_actors.push_back(newGoomba);
+        break;
+    }
+    case Level::koopa: {
+        Actor* newKoopa = new Koopa(this, x, y);
+        m_actors.push_back(newKoopa);
+        break;
+    }
+    case Level::piranha: {
+        Actor* newPiranha = new Piranha(this, x, y);
+        m_actors.push_back(newPiranha);
+        break;
     }
     }
+
+    //TODO lot of repetitive code here
     
 }
 
-Actor* StudentWorld::blockingBlock(Actor* curActor, int dx, int dy) 
+
+//----------------Overlap Handling---------------//
+Actor* StudentWorld::blockingBlock(Actor* curActor, int dx, int dy) const
 //TODO only implemented for static objects like blocks for now
 {
-    list<Actor*>::iterator it = m_actors.begin();
+    list<Actor*>::const_iterator it = m_actors.begin();
     while (it != m_actors.end()) {
         if (!(*it)->canMoveThrough() && overlap(curActor, (*it), dx, dy)) {
             return (*it);
@@ -168,16 +213,28 @@ Actor* StudentWorld::blockingBlock(Actor* curActor, int dx, int dy)
     return nullptr;
 }
 
-bool StudentWorld::collisionWithBlock(Actor* curActor, int dx, int dy)
+bool StudentWorld::collisionWithBlock(Actor* curActor, int dx, int dy) const
 {
     return (blockingBlock(curActor, dx, dy) != nullptr);
 }
 
-bool StudentWorld::overlapWithPeach(Actor* curActor) {
+bool StudentWorld::overlapWithPeach(Actor* curActor) const{
     return overlap(curActor, m_Peach);
 }
 
-bool StudentWorld::overlap(Actor* curActor, Actor* targetActor, int dx, int dy) {
+bool StudentWorld::damageOverlap(Actor* curActor) {
+    list<Actor*>::iterator it = m_actors.begin();
+    while (it != m_actors.end()) {
+        if ((*it)->damagable() && (*it) != m_Peach && overlap(curActor, (*it))) { //TODO CHeck if not peach may be illegal
+            (*it)->kill();
+            return true;
+        }
+        it++;
+    }
+    return false;
+}
+
+bool StudentWorld::overlap(Actor* curActor, Actor* targetActor, int dx, int dy) const {
     //cur Actor
     int curActorX = curActor->getX() + dx;
     int curActorY = curActor->getY() + dy;
@@ -192,6 +249,28 @@ bool StudentWorld::overlap(Actor* curActor, Actor* targetActor, int dx, int dy) 
     return false; //actors do not overlap
 
 }
+
+bool StudentWorld::isSupported(Actor* curActor, int dx) const {
+    int pixelsBelow = 0;
+    list<Actor*>::const_iterator it = m_actors.begin();
+    while (it != m_actors.end()) {
+        if (!(*it)->canMoveThrough() && curActor->getY() - (*it)->getY() == SPRITE_HEIGHT) {
+            int diff = SPRITE_WIDTH - abs(curActor->getX() + dx - (*it)->getX());
+            if (diff > 0) pixelsBelow += diff;
+        }
+        it++;
+    }
+    return pixelsBelow >= SPRITE_WIDTH;
+
+};
+
+void StudentWorld::bonkOverlapsWithPeach() {
+    list<Actor*>::iterator it = m_actors.begin();
+    while (it != m_actors.end()) {
+        if (overlapWithPeach(*it)) (*it)->bonk();
+        it++;
+    }
+};
 
 void StudentWorld::updateText() {
     ostringstream text;
@@ -214,6 +293,13 @@ Peach* StudentWorld::getPeach() {
     return m_Peach;
 }
 
+void StudentWorld::completeLevel() {
+    m_levelCompleted = true;
+}
+
+void StudentWorld::completeGame() {
+    m_gameCompleted = true;
+}
 //-----------Actor adders------------//
 void StudentWorld::addGoodie(string type, int x, int y) {
     Actor* newGoodie = nullptr;
@@ -221,4 +307,12 @@ void StudentWorld::addGoodie(string type, int x, int y) {
     else if (type == STAR) newGoodie = new Star(this, x, y + 8);
     else if (type == FLOWER) newGoodie = new Flower(this, x, y + 8);
     m_actors.push_back(newGoodie);
+};
+
+void StudentWorld::addProjectile(int type, int x, int y, int direction) {
+    Actor* newProjectile = nullptr;
+    if (type == PEACHFIRE) newProjectile = new PeachFireball(this, x, y, direction);
+    else if (type == SHELL) newProjectile = new Shell(this, x, y, direction);
+    else if (type == PIRANHAFIRE) newProjectile = new PiranhaFireball(this, x, y, direction);
+    m_actors.push_back(newProjectile);
 };

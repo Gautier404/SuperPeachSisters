@@ -4,10 +4,16 @@
 #include "GraphObject.h"
 #include <string>
 
+//for create goodie function in student world
 const std::string MUSHROOM = "jump";
 const std::string STAR = "star";
 const std::string FLOWER = "shoot";
 const std::string NONE = "none";
+
+//for create projectile function in student world
+const int PEACHFIRE = 0;
+const int PIRANHAFIRE = 1;
+const int SHELL = 2;
 
 class StudentWorld;
 // Students:  Add code to this file, Actor.cpp, StudentWorld.h, and StudentWorld.cpp
@@ -21,10 +27,11 @@ public:
 		int depth,
 		double size);
 	virtual void doSomething() = 0;
-	virtual void bonk() = 0; //removes one hit point
+	virtual void bonk();
+	virtual bool isFriendly() const;
 	bool ifAlive() const; //returns if actor is alive
 	virtual bool damagable() const;
-	void kill(); // sets isAlive to false
+	virtual void kill(); // sets isAlive to false
 	virtual bool canMoveThrough(); //returns if able to move through actor
 	StudentWorld* getWorld() const;
 	void itemFall(); //translates actor down 2 px if possible;
@@ -38,6 +45,7 @@ public:
 	Peach(StudentWorld* world, int startX, int startY);
 	virtual void doSomething();
 	virtual void bonk();
+	virtual void kill();
 	virtual bool damagable() const; //Spec needs this for block so I guess I'll need it for most things?
 	bool isInvincible(); //returns if peach is currently invincible
 
@@ -76,6 +84,7 @@ private:
 	void continueJump();
 	void initJump();
 	void fall();
+	void shoot();
 };
 
 class Block :public Actor {
@@ -96,19 +105,12 @@ public:
 	Pipe(StudentWorld* world, int startX, int startY);
 	virtual void bonk();
 };
-//class Projectile : public Actor {
-//public:
-//	Projectile(StudentWorld* world, int imageID, int startX, int startY, int direction);
-//	virtual void doSomething();
-//
-//};
 
 class Goodie : public Actor {
 public:
 	Goodie(StudentWorld* world, int imageID, int startX, int startY);
 	virtual void doSomething();
 	virtual void powerPeachUp() = 0;
-	virtual void bonk();
 
 private:
 	void patrol();
@@ -132,8 +134,69 @@ public:
 	virtual void powerPeachUp();
 };
 
-class Enemy : public Actor {
+class Projectile : public Actor {
+public:
+	Projectile(StudentWorld* world, int imageID, int startX, int startY, int direction);
+	virtual void doSomething();
+	virtual bool hitThing();
+};
 
+class PeachFireball :public Projectile {
+public:
+	PeachFireball(StudentWorld* world, int startX, int startY, int direction);
+};
+
+class Shell :public Projectile {
+public:
+	Shell(StudentWorld* world, int startX, int startY, int direction);
+};
+
+class PiranhaFireball :public Projectile {
+public:
+	PiranhaFireball(StudentWorld* world, int startX, int startY, int direction);
+	virtual bool hitThing();
+}; 
+
+class Flag : public Actor {
+public:
+	Flag(StudentWorld* world, int startX, int startY, int imageID = IID_FLAG);
+	virtual void doSomething();
+	virtual void tellWorldAboutWin();
+};
+
+class Mario : public Flag {
+public:
+	Mario(StudentWorld* world, int startX, int startY);
+	virtual void tellWorldAboutWin();
+};
+
+class Enemy : public Actor {
+public:
+	Enemy(StudentWorld* world, int imageID, int startX, int startY);
+	virtual void doSomething();
+	virtual bool damagable();
+	virtual void bonk();
+	virtual void kill();
+	virtual void patrol();
+	virtual bool isFriendly() const;
+private: 
+};
+
+class Piranha : public Enemy {
+public:
+	Piranha(StudentWorld* world, int startX, int startY);
+	virtual void patrol();
+};
+
+class Koopa : public Enemy {
+public:
+	Koopa(StudentWorld* world, int startX, int startY);
+	virtual void kill();
+};
+
+class Goomba : public Enemy {
+public:
+	Goomba(StudentWorld* world, int startX, int startY);
 };
 
 
