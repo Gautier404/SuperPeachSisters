@@ -135,10 +135,19 @@ void Peach::doSomething() {
 };
 
 void Peach::bonk() {
-	return;//dummy
+	kill();
+	return;
 }
 
 void Peach::kill() {
+	if (goodieBag.star || tempInvincible)return;
+	hitpoints--;
+	ticksOfTempInvincibility = 10;
+	tempInvincible = true;
+	goodieBag.jump = false;
+	goodieBag.shoot = false;
+	if (hitpoints >= 1) getWorld()->playSound(SOUND_PLAYER_HURT);
+	if (hitpoints <= 0) Actor::kill();
 	return;//TODO dummy
 }
 
@@ -436,7 +445,7 @@ void Mario::tellWorldAboutWin() {
 Enemy::Enemy(StudentWorld* world, int imageID, int startX, int startY):
 	Actor(world, imageID, startX, startY, 0, 0, 1) {};
 
-bool Enemy::damagable() {
+bool Enemy::damagable() const {
 	return true;
 }
 
@@ -484,15 +493,43 @@ void Enemy::bonk() {
 void Enemy::kill() {
 	getWorld()->increaseScore(100);
 	Actor::kill();
-	cerr << "kill calle" << endl;
 	return;//TODO
 }
 
 //------------Piranha------------//
 Piranha::Piranha(StudentWorld* world, int startX, int startY) :
-	Enemy(world, IID_PIRANHA, startX, startY) {};
+	Enemy(world, IID_PIRANHA, startX, startY),m_firingDelay(0) {};
 
 void Piranha::patrol() {
+	//cycle animation
+	increaseAnimationNumber();
+	//determine if on same plane of peach
+	if (abs(getY() - getWorld()->getPeach()->getY()) >= 1.5 * SPRITE_HEIGHT) return;
+	//face peach
+	int diff = getX() - getWorld()->getPeach()->getX();
+	if (diff > 0) setDirection(180);
+	else setDirection(0);
+	//deacrease firing delay if neccesary
+	if (m_firingDelay > 0) m_firingDelay--;
+	//choose to fire
+	else {
+		if (abs(diff) < 8 * SPRITE_WIDTH)//coordinate is strictly less than 8 * SPRITE_WIDTH pixels away
+		{
+			getWorld()->addProjectile(PIRANHAFIRE, getX(), getY(), getDirection());
+			getWorld()->playSound(SOUND_PIRANHA_FIRE);
+			m_firingDelay = 40;
+		}
+	}
+	/*It will compute the distance between itselfand Peach.If Peach’s x
+		 from
+		Piranha’s x coordinate, then Piranha will :
+	i.Add a new Piranha Fireball object to StudentWorld at its current
+		x, y position, with an initial direction facing in the same direction
+		that Piranha is facing
+		ii.Play the sound SOUND_PIRANHA_FIRE using GameWorld’s
+		playSound() method.
+		iii.Set its firing delay to 40, so Piranha won’t fire at Peach for another
+		40 ticks*/
 	return; //TODO implement
 }
 
@@ -501,8 +538,8 @@ Koopa::Koopa(StudentWorld* world, int startX, int startY) :
 	Enemy(world, IID_KOOPA, startX, startY) {};
 
 void Koopa::kill() {
-	getWorld()->increaseScore(100);
-	Actor::kill();
+	//if the koopas already been killed don't do anything
+	Enemy::kill();
 	getWorld()->addProjectile(SHELL, getX(), getY(), getDirection());
 	return; //TODO implement shell thing
 }

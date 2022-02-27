@@ -76,6 +76,11 @@ int StudentWorld::move()
   
     while (it != m_actors.end()) {
         (*it)->doSomething();
+        if (!m_Peach->ifAlive()) {
+            playSound(SOUND_PLAYER_DIE);
+            decLives();
+            return GWSTATUS_PLAYER_DIED;
+        }
         //have to add in detection for if peach dies (prolly check if she's alive)
         it++;
     }
@@ -105,10 +110,6 @@ int StudentWorld::move()
 
     //if level isn't over then continue the game
     return GWSTATUS_CONTINUE_GAME;
-
-
-    //decLives();
-    //return GWSTATUS_PLAYER_DIED;
 }
 
 void StudentWorld::cleanUp()
@@ -225,7 +226,7 @@ bool StudentWorld::overlapWithPeach(Actor* curActor) const{
 bool StudentWorld::damageOverlap(Actor* curActor) {
     list<Actor*>::iterator it = m_actors.begin();
     while (it != m_actors.end()) {
-        if ((*it)->damagable() && (*it) != m_Peach && overlap(curActor, (*it))) { //TODO CHeck if not peach may be illegal
+        if ((*it)->damagable() && (*it) != m_Peach && overlap((*it), curActor) && (*it)->ifAlive()) { //TODO CHeck if not peach may be illegal
             (*it)->kill();
             return true;
         }
@@ -267,7 +268,7 @@ bool StudentWorld::isSupported(Actor* curActor, int dx) const {
 void StudentWorld::bonkOverlapsWithPeach() {
     list<Actor*>::iterator it = m_actors.begin();
     while (it != m_actors.end()) {
-        if (overlapWithPeach(*it)) (*it)->bonk();
+        if (overlapWithPeach(*it) && (*it) != m_Peach) (*it)->bonk();
         it++;
     }
 };

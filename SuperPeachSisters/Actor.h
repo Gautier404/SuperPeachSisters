@@ -174,18 +174,19 @@ class Enemy : public Actor {
 public:
 	Enemy(StudentWorld* world, int imageID, int startX, int startY);
 	virtual void doSomething();
-	virtual bool damagable();
+	virtual bool damagable() const;
 	virtual void bonk();
 	virtual void kill();
 	virtual void patrol();
 	virtual bool isFriendly() const;
-private: 
 };
 
 class Piranha : public Enemy {
 public:
 	Piranha(StudentWorld* world, int startX, int startY);
 	virtual void patrol();
+private:
+	int m_firingDelay;
 };
 
 class Koopa : public Enemy {
