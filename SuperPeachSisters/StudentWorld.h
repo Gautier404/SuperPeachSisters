@@ -15,22 +15,25 @@ class StudentWorld : public GameWorld
 {
 public:
 	StudentWorld(std::string assetPath);
-	~StudentWorld();
+	virtual ~StudentWorld();
 	virtual int init();
 	virtual int move();
 	virtual void cleanUp();
-
-	Peach* getPeach();
 	
 	//Public Overlapping functions
-	bool collisionWithBlock(Actor* curActor, int dx = 0, int dy = 0) const;	//determiens if current actor will collid with 
-																			//a block dx & dy are in pixels
-	Actor* blockingBlock(Actor* curActor, int dx = 0, int dy = 0) const;		//returns address of blocking block
-	bool overlapWithPeach(Actor* curActor) const; //return if current actor overlaps with peach
+	bool overlapWithPeach(Actor* curActor) const;
+	bool bonkBlockingBlock(Actor* curActor, int dx = 0, int dy = 0, bool bonkDatBlock = false);		//returns true if actor hit a block
 	bool isSupported(Actor* curActor, int dx) const;
 	void bonkOverlapsWithPeach();
 	bool damageOverlap(Actor* curActor);
 
+	//Peach interface
+	bool peachHasStar() const;
+	void setPeachHPTo(int hp);
+	void givePeachPower(std::string power);
+	void hitPeach();
+	int getPeachX() const;
+	int getPeachY() const;
 
 	//level logic setters
 	void completeLevel();
@@ -41,7 +44,7 @@ public:
 	void addProjectile(int type, int x, int y, int direction);
 private:
 	//std::map <std::string, std::list<Actor*>> m_actors;
-	std::list<Actor*> m_actors;
+	std::list<Actor*>* m_actors;
 	Peach* m_Peach;
 
 	bool m_levelCompleted;

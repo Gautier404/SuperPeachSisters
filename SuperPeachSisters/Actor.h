@@ -28,7 +28,6 @@ public:
 		double size);
 	virtual void doSomething() = 0;
 	virtual void bonk();
-	virtual bool isFriendly() const;
 	bool ifAlive() const; //returns if actor is alive
 	virtual bool damagable() const;
 	virtual void kill(); // sets isAlive to false
@@ -47,7 +46,7 @@ public:
 	virtual void bonk();
 	virtual void kill();
 	virtual bool damagable() const; //Spec needs this for block so I guess I'll need it for most things?
-	bool isInvincible(); //returns if peach is currently invincible
+	
 
 	//goodie bag getters
 	bool hasStar() const;
@@ -66,7 +65,7 @@ private:
 	//counters and statuses
 	int ticksOfTempInvincibility;
 	bool tempInvincible;
-	int ticksOfrecharge;
+	int time_to_recharge_before_next_fire;
 	bool recharge;
 	int jumpDistToGo;
 
@@ -178,7 +177,6 @@ public:
 	virtual void bonk();
 	virtual void kill();
 	virtual void patrol();
-	virtual bool isFriendly() const;
 };
 
 class Piranha : public Enemy {

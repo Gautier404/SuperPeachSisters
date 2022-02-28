@@ -36,10 +36,6 @@ bool Actor::ifAlive() const {
 	return isAlive;
 }
 
-bool Actor::isFriendly() const {
-	return true;
-}
-
 void Actor::kill() {
 	isAlive = false;
 }
@@ -61,7 +57,7 @@ StudentWorld* Actor::getWorld() const {
 }
 
 void Actor::itemFall() {
-	if (getWorld()->collisionWithBlock(this, 0, -2))return; //TODO does this actually prevent falling
+	if (getWorld()->bonkBlockingBlock(this, 0, -2))return; //TODO does this actually prevent falling
 	moveTo(getX(), getY() - 2);
 }
 
@@ -71,7 +67,7 @@ Peach::Peach(StudentWorld* world, int startX, int startY):
 	ticksOfTempInvincibility = 0;
 	tempInvincible = false;
 	recharge = false;
-	ticksOfrecharge = 0;
+	time_to_recharge_before_next_fire = 0;
 	jumpDistToGo = 0;
 	goodieBag.jump = false;
 	goodieBag.star = false;
@@ -98,8 +94,8 @@ void Peach::doSomething() {
 }
 	//4. Check if she is in recharge mode
 	if (recharge) {
-		ticksOfrecharge--;
-		if (ticksOfrecharge <= 0) recharge = false;
+		time_to_recharge_before_next_fire--;
+		if (time_to_recharge_before_next_fire <= 0) recharge = false;
 	}
 	//5. Check to see if she overlaps with another object and bonk
 	getWorld()->bonkOverlapsWithPeach();
@@ -185,17 +181,12 @@ void Peach::setHitPoint(int hp) {
 	hitpoints = hp;
 }
 
-//returns if peach is invincible
-bool Peach::isInvincible() {
-	return goodieBag.star || tempInvincible;
-}
-
 //Peach Helper movement functions
 
 //bonk object on peaches left or move to the left
 void Peach::moveLeft() {
 	setDirection(180);
-	if (getWorld()->collisionWithBlock(this, -4)) {
+	if (getWorld()->bonkBlockingBlock(this, -4)) {
 		//TODO bonk that object
 		return;
 	}
@@ -205,7 +196,7 @@ void Peach::moveLeft() {
 //bonk object on peaches right or move to the right
 void Peach::moveRight() {
 	setDirection(0);
-	if (getWorld()->collisionWithBlock(this, +4)) {
+	if (getWorld()->bonkBlockingBlock(this, +4)) {
 		//TODO bonk that object
 		return;
 	}
@@ -215,7 +206,7 @@ void Peach::moveRight() {
 //if peach has something solid below her set her jump distance
 //based on her mushroom power up
 void Peach::initJump() {
-	if (!getWorld()->collisionWithBlock(this, 0, -1))return;
+	if (!getWorld()->bonkBlockingBlock(this, 0, -1))return;
 	if (goodieBag.jump) jumpDistToGo = 12;
 	else jumpDistToGo = 8;
 	getWorld()->playSound(SOUND_PLAYER_JUMP);
@@ -224,9 +215,7 @@ void Peach::initJump() {
 //if peach is currently jumping bonk actor above her or move her up
 void Peach::continueJump() {
 	if (jumpDistToGo <= 0) return;
-	Actor* blockToBonk = getWorld()->blockingBlock(this, 0, +4);
-	if (blockToBonk != nullptr) {
-		blockToBonk->bonk();//TODO bonk object above peach
+	if (getWorld()->bonkBlockingBlock(this, 0, +4, true) == true) {
 		jumpDistToGo = 0;
 		return;
 	}
@@ -237,14 +226,14 @@ void Peach::continueJump() {
 //check if an object (0, 3] pixels below her
 //if no object translate her y by -4 pixels
 void Peach::fall() {
-	if (getWorld()->collisionWithBlock(this, 0, -3))return; //TODO does this actually prevent falling
+	if (getWorld()->bonkBlockingBlock(this, 0, -3))return; //TODO does this actually prevent falling
 	moveTo(getX(), getY() - 4);
 }
 
 void Peach::shoot() {
 	if (!recharge && goodieBag.shoot) {
 		getWorld()->playSound(SOUND_PLAYER_FIRE);
-		ticksOfrecharge = 8;
+		time_to_recharge_before_next_fire = 8;
 		recharge = true;
 		int dx;
 		if (getDirection() == 0) dx = 4;
@@ -298,7 +287,7 @@ void Goodie::doSomething() {
 	if (getWorld()->overlapWithPeach(this)) {
 		powerPeachUp();
 		//set peach hitpoint to 2
-		getWorld()->getPeach()->setHitPoint(2);
+		getWorld()->setPeachHPTo(2);
 		kill();
 		getWorld()->playSound(SOUND_PLAYER_POWERUP);
 		return;
@@ -314,13 +303,13 @@ void Goodie::patrol() {
 	if (getDirection() == 0) {
 		//if facing right check if goodie can move to the right.
 		//move it if it can or switch its direction
-		if (!getWorld()->collisionWithBlock(this, +2)) moveTo(getX() + 2, getY());
+		if (!getWorld()->bonkBlockingBlock(this, +2)) moveTo(getX() + 2, getY());
 		else setDirection(180);
 	}
 	else {
 		//if facing left check if goodie can move to the left.
 		//move it if it can or switch its direction.
-		if (!getWorld()->collisionWithBlock(this, -2)) moveTo(getX() - 2, getY());
+		if (!getWorld()->bonkBlockingBlock(this, -2)) moveTo(getX() - 2, getY());
 		else setDirection(0);
 	}
 }
@@ -333,7 +322,7 @@ void Mushroom::powerPeachUp() {
 	//increase score
 	getWorld()->increaseScore(75);
 	//inform peach she has jump
-	getWorld()->getPeach()->giveJump(); 
+	getWorld()->givePeachPower(MUSHROOM);
 	
 	return;
 }
@@ -346,7 +335,7 @@ void Star::powerPeachUp() {
 	//increase score
 	getWorld()->increaseScore(100);
 	//inform peach she has star
-	getWorld()->getPeach()->giveStar();
+	getWorld()->givePeachPower(STAR);
 }
 
 
@@ -358,7 +347,7 @@ void Flower::powerPeachUp() {
 	//increase score
 	getWorld()->increaseScore(50);
 	//inform peach she has star
-	getWorld()->getPeach()->giveShoot();
+	getWorld()->givePeachPower(FLOWER);
 }
 
 
@@ -379,13 +368,13 @@ void Projectile::doSomething() {
 	if (getDirection() == 0) {
 		//if facing right check if goodie can move to the right.
 		//move it if it can, otherwise set its status to not alive
-		if (!getWorld()->collisionWithBlock(this, +2)) moveTo(getX() + 2, getY());
+		if (!getWorld()->bonkBlockingBlock(this, +2)) moveTo(getX() + 2, getY());
 		else kill();
 	}
 	else {
 		//if facing left check if goodie can move to the left.
 		//move it if it can, otherwise set its status to not alive
-		if (!getWorld()->collisionWithBlock(this, -2)) moveTo(getX() - 2, getY());
+		if (!getWorld()->bonkBlockingBlock(this, -2)) moveTo(getX() - 2, getY());
 		else kill();
 	};
 }
@@ -410,7 +399,7 @@ PiranhaFireball::PiranhaFireball(StudentWorld* world, int startX, int startY, in
 
 bool PiranhaFireball::hitThing() {
 	if (getWorld()->overlapWithPeach(this)) {
-		getWorld()->getPeach()->kill();
+		getWorld()->hitPeach();
 		return true;
 	}
 	else return false;
@@ -449,23 +438,19 @@ bool Enemy::damagable() const {
 	return true;
 }
 
-bool Enemy::isFriendly() const {
-	return false;
-}
-
 void Enemy::doSomething() {
 	//if dead return immediatly
 	if (!ifAlive()) return;
 	//attempt to bonk peach
-	if (getWorld()->overlapWithPeach(this)) getWorld()->getPeach()->bonk();
+	if (getWorld()->overlapWithPeach(this)) getWorld()->hitPeach();
 	//move if koopa or goomba move or attempt to shoot peach & update animation frame if Piranha
 	patrol();
 }
 
 void Enemy::patrol() {
 	//if enemy is blocked in current direction switch its direction
-	if (getDirection() == 0 && getWorld()->collisionWithBlock(this, +1)) setDirection(180);
-	else if (getWorld()->collisionWithBlock(this, -1)) setDirection(0);
+	if (getDirection() == 0 && getWorld()->bonkBlockingBlock(this, +1)) setDirection(180);
+	else if (getWorld()->bonkBlockingBlock(this, -1)) setDirection(0);
 	//if not blocked but it will end up moving over empty space switch its direction
 	else {
 		if (getDirection() == 0 && !getWorld()->isSupported(this, +1)) setDirection(180);
@@ -473,17 +458,17 @@ void Enemy::patrol() {
 	}
 	//if enemy can move in new direction move otherwise immediatly return
 	if (getDirection() == 0) {
-		if (!getWorld()->collisionWithBlock(this, +1)) moveTo(getX() + 1, getY());
+		if (!getWorld()->bonkBlockingBlock(this, +1)) moveTo(getX() + 1, getY());
 		else return;
 	}
 	else {
-		if (!getWorld()->collisionWithBlock(this, -1)) moveTo(getX() - 1, getY());
+		if (!getWorld()->bonkBlockingBlock(this, -1)) moveTo(getX() - 1, getY());
 		else return;
 	}
 }
 
 void Enemy::bonk() {
-	if (getWorld()->getPeach()->hasStar()) {
+	if (getWorld()->peachHasStar()) {
 		getWorld()->playSound(SOUND_PLAYER_KICK);
 		kill();
 	}
@@ -504,9 +489,9 @@ void Piranha::patrol() {
 	//cycle animation
 	increaseAnimationNumber();
 	//determine if on same plane of peach
-	if (abs(getY() - getWorld()->getPeach()->getY()) >= 1.5 * SPRITE_HEIGHT) return;
+	if (abs(getY() - getWorld()->getPeachY()) >= 1.5 * SPRITE_HEIGHT) return;
 	//face peach
-	int diff = getX() - getWorld()->getPeach()->getX();
+	int diff = getX() - getWorld()->getPeachX();
 	if (diff > 0) setDirection(180);
 	else setDirection(0);
 	//deacrease firing delay if neccesary
